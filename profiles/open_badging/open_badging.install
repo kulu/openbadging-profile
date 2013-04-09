@@ -1,0 +1,175 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the badges install profile.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * Perform actions to set up the site for this profile.
+ *
+ * @see system_install()
+ */
+function open_badging_install() {
+
+  // Add text formats.
+  $filtered_html_format = array(
+      'format' => 'filtered_html',
+      'name' => 'Filtered HTML',
+      'weight' => 0,
+      'filters' => array(
+          // URL filter.
+          'filter_url' => array(
+              'weight' => 0,
+              'status' => 1,
+          ),
+          // HTML filter.
+          'filter_html' => array(
+              'weight' => 1,
+              'status' => 1,
+          ),
+          // Line break filter.
+          'filter_autop' => array(
+              'weight' => 2,
+              'status' => 1,
+          ),
+          // HTML corrector filter.
+          'filter_htmlcorrector' => array(
+              'weight' => 10,
+              'status' => 1,
+          ),
+      ),
+  );
+  $filtered_html_format = (object) $filtered_html_format;
+  filter_format_save($filtered_html_format);
+
+  $full_html_format = array(
+      'format' => 'full_html',
+      'name' => 'Full HTML',
+      'weight' => 1,
+      'filters' => array(
+          // URL filter.
+          'filter_url' => array(
+              'weight' => 0,
+              'status' => 1,
+          ),
+          // Line break filter.
+          'filter_autop' => array(
+              'weight' => 1,
+              'status' => 1,
+          ),
+          // HTML corrector filter.
+          'filter_htmlcorrector' => array(
+              'weight' => 10,
+              'status' => 1,
+          ),
+      ),
+  );
+  $full_html_format = (object) $full_html_format;
+  filter_format_save($full_html_format);
+
+  // Enable user picture support and set the default to a square thumbnail option.
+  variable_set('user_pictures', '1');
+  variable_set('user_picture_dimensions', '1024x1024');
+  variable_set('user_picture_file_size', '800');
+  variable_set('user_picture_style', 'thumbnail');
+
+  // Allow visitor account creation with administrative approval.
+  //variable_set('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL);
+  // Enable the admin theme.
+  db_update('system')
+          ->fields(array('status' => 1))
+          ->condition('type', 'theme')
+          ->condition('name', 'seven')
+          ->execute();
+  variable_set('admin_theme', 'seven');
+
+  variable_set('node_admin_theme', '1');
+
+  /* admin settings for mime mail */
+  variable_set('mimemail_sitestyle', FALSE);
+  variable_set('mimemail_format', 'full_html');
+
+  /* admin settings for the achievment */
+  variable_set('openbadging_forward_link_style', 2);
+
+  /* set permissiobns to the authenticated user */
+  // Enable default permissions for system roles.
+  $filtered_html_permission = filter_permission_name($filtered_html_format);
+
+  user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array(
+      'access content',
+      'access comments',
+      'access user profiles', $filtered_html_permission));
+
+  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array(
+      'access content',
+      'access comments',
+      'post comments',
+      'skip comment approval',
+      'earn achievements',
+      'access openbadging forward',
+      'access user profiles', $filtered_html_permission));
+
+  /**
+   * remove permission for mime mail admin settings from authenticated user
+   */
+  $permission_deleted = db_delete('role_permission')
+          ->condition('rid', 2, '=')
+          ->condition('permission', 'edit mimemail user settings', '=')
+          ->condition('module', 'mimemail', '=')
+          ->execute();
+
+  // Create a default vocabulary named "Tags", enabled for the 'article' content type.
+  $description = st('Use tags to group articles on similar topics into categories.');
+  $help = st('Enter a comma-separated list of words to describe your content.');
+  $vocabulary = (object) array(
+              'name' => st('Tags'),
+              'description' => $description,
+              'machine_name' => 'tags',
+              'help' => $help,
+  );
+  taxonomy_vocabulary_save($vocabulary);
+
+  $field = array(
+      'field_name' => 'field_' . $vocabulary->machine_name,
+      'type' => 'taxonomy_term_reference',
+      // Set cardinality to unlimited for tagging.
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'settings' => array(
+          'allowed_values' => array(
+              array(
+                  'vocabulary' => $vocabulary->machine_name,
+                  'parent' => 0,
+              ),
+          ),
+      ),
+  );
+  field_create_field($field);
+
+  $instance = array(
+      'field_name' => 'field_' . $vocabulary->machine_name,
+      'entity_type' => 'node',
+      'label' => 'Tags',
+      'bundle' => 'article',
+      'description' => $vocabulary->help,
+      'widget' => array(
+          'type' => 'taxonomy_autocomplete',
+          'weight' => -4,
+      ),
+      'display' => array(
+          'default' => array(
+              'type' => 'taxonomy_term_reference_link',
+              'weight' => 10,
+          ),
+          'teaser' => array(
+              'type' => 'taxonomy_term_reference_link',
+              'weight' => 10,
+          ),
+      ),
+  );
+  field_create_instance($instance);
+}
+

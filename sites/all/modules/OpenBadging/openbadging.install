@@ -1,0 +1,196 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the openbadging module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function openbadging_schema() {
+  $schema = array();
+
+  $schema['openbadging'] = array(
+      'description' => 'The base table for openbadgings.',
+      'fields' => array(
+          'bid' => array(
+              'description' => 'The primary identifier for the openbadging.',
+              'type' => 'serial',
+              'unsigned' => TRUE,
+              'not null' => TRUE,
+          ),
+          'type' => array(
+              'description' => 'The type (bundle) of this openbadging.',
+              'type' => 'varchar',
+              'length' => 255,
+              'not null' => TRUE,
+              'default' => '',
+          ),
+          'title' => array(
+              'description' => 'The title of the openbadging.',
+              'type' => 'varchar',
+              'length' => 255,
+              'not null' => TRUE,
+              'default' => '',
+          ),
+          'uid' => array(
+              'description' => 'ID of Drupal user creator.',
+              'type' => 'int',
+              'not null' => TRUE,
+          ),
+          'created' => array(
+              'description' => 'The Unix timestamp when the openbadging was created.',
+              'type' => 'int',
+              'not null' => TRUE,
+              'default' => 0,
+          ),
+          'changed' => array(
+              'description' => 'The Unix timestamp when the openbadging was most recently saved.',
+              'type' => 'int',
+              'not null' => TRUE,
+              'default' => 0,
+          ),
+          'description' => array(
+              'description' => 'openbadging description.',
+              'type' => 'text',
+          ),
+          'status' => array(
+              'description' => 'The Unix timestamp when the achievement was created.',
+              'type' => 'int',
+              'not null' => TRUE,
+              'default' => 1,
+          ),
+      ),
+      'primary key' => array('bid'),
+  );
+
+  $schema['openbadging_types'] = array(
+      'description' => 'Stores information about all defined openbadging types.',
+      'fields' => array(
+  'id' => array(
+      'type' => 'serial',
+      'not null' => TRUE,
+      'description' => 'Primary Key: Unique openbadging type ID.',
+  ),
+  'type' => array(
+      'description' => 'The machine-readable name of this type.',
+      'type' => 'varchar',
+      'length' => 32,
+      'not null' => TRUE,
+  ),
+  'label' => array(
+      'description' => 'The human-readable name of this type.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'default' => '',
+  ),
+  'description' => array(
+      'description' => 'A brief description of this type.',
+      'type' => 'text',
+      'not null' => TRUE,
+      'size' => 'medium',
+      'translatable' => TRUE,
+  ),
+      ) + entity_exportable_schema_fields(),
+      'primary key' => array('id'),
+      'unique keys' => array(
+          'type' => array('type'),
+      ),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install
+ * * */
+function openbadging_install() {
+  // achievement_data_insert_into_openbadging();
+}
+
+/**
+ * function : openbadging_update_7050()
+ * Importing data from 'achievement_entity' previous table  to 'openbadging'
+ * **** */
+function openbadging_update_7050() {
+
+  $matches = array();
+  $openBadgingTable = 'openbadging';
+  $achievementEntityTable = 'achievement_entity';
+
+  if (db_table_exists($openBadgingTable) && db_table_exists($achievementEntityTable)) {
+    $result = db_select('achievement_entity', 'a')
+            ->fields('a', array('bid', 'type ', 'title', 'uid', 'created', 'changed', 'description', 'status'))
+            ->execute();
+    $count = $result->rowCount();
+    // Fetching rows from openbadging		
+    // save the data into openbadging
+    if ($count > 0) {
+      foreach ($result as $row) {
+
+        //insert achievement_entity data into the openbadging table				
+        db_insert('openbadging')
+                ->fields(array(
+                    'bid' => $row->bid,
+                    'type ' => $row->type,
+                    'title' => $row->title,
+                    'uid' => $row->uid,
+                    'created' => $row->created,
+                    'changed' => $row->changed,
+                    'description' => $row->description,
+                    'status' => $row->status
+                ))
+                ->execute();
+      }
+    }
+  }
+}
+
+/**
+ * function : openbadging_update_7070()
+ * Importing data from previous table 
+ * **** */
+function openbadging_update_7070() {
+
+  $matches = array();
+  $openBadgingTable = 'openbadging_types';
+  $achievementEntityTable = 'achievement_types';
+
+  if (db_table_exists($openBadgingTable) && db_table_exists($achievementEntityTable)) {
+    $result = db_select('achievement_types', 'a')
+            ->fields('a', array('id', 'type ', 'label', 'description', 'status', 'module'))
+            ->execute();
+    $count = $result->rowCount();
+
+    // Fetching rows from openbadging
+    // save the data into openbadging
+    if ($count > 0) {
+      foreach ($result as $row) {
+        $resultOpenbadging = db_select('openbadging_types', 'a')
+                ->fields('a', array('id'))
+                ->condition('type', $row->type, '=')
+                ->execute();
+        $openBadgingCount = $resultOpenbadging->rowCount();
+        if ($openBadgingCount > 0) {
+          
+        } else {
+
+          //insert achievement_entity data into the openbadging table				
+          /* db_insert('openbadging_types') 
+            ->fields(array(
+            'type ' => $row->type,
+            'label' => $row->label,
+            'description' => $row->description,
+            'status' => $row->status,
+            'module' => $row->module
+            ))
+            ->execute(); */
+
+          $result = db_query("INSERT INTO {openbadging_types} (type, label, description, status, module) VALUES (%s, %s, %s, %s, %s)", $row->type, $row->label, $row->description, $row->status, $row->module);
+        }
+      }
+    }
+  }
+}
+

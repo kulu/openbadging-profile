@@ -1,0 +1,43 @@
+Installation
+-------------
+1. Download the code from the url https://github.com/ebizon/openbadging-profile/archive/master.zip.
+2. Extract the downloaded code.
+3. Place the code at system document root.
+4. Create a blank MYSQL database along with a user having full permissions on this database.
+5. Create a files folder inside the [Drupal root]/sites/default and give it to write permissions.
+6. Copy default.settings.php to settings.php ([Drupal root]/sites/default/default.settings.php).
+7. Give write permissions to default folder ([Drupal root]/sites/default).
+8. Run install.php at browser eg. (http://example.com/install.php).
+9. Select "Open Badging" and click on "save and continue" button.
+10. Then again click on "save and continue" button.
+11. Fill the form with following details.
+		Database name: Name of the Mysql Database
+    Database username: Newly created user for this database
+    Database password: Newly created password for this user.
+    Click on "save and continue" button.
+12. Once the installation process completed to 100% then "Configure site" page opened.
+13. Fill the form with following details.
+		SITE INFORMATION
+       Site name: Name of the site
+       Site e-mail address: Email of the site
+    SITE MAINTENANCE ACCOUNT
+       Enter the site admin user details.
+    SERVER SETTINGS
+			 Select the server settings details.
+ 	
+    Click on "save and continue" button.
+
+14. Goto http://example.com/admin/structure/taxonomy/badge_recipient_/add to add recipient of the badges.
+15. Goto http://example.com/admin/structure/taxonomy/badge_type/add to add types of the badges.
+16. Goto http://example.com/admin/structure/taxonomy/program/add to add the programs of the badges.
+17. Goto http://example.com/admin/structure/taxonomy/year/add to add the year of the badges
+18. Goto http://example.com/openbadging/add/badges to create a new badge in site.
+19. Goto http://example.com/openbadging/add/issuer_information to create a new badge in site.
+21. Goto http://example.com/admin/people/create to create a new user in site.
+22. Goto http://example.com/badge-manager to assign/unassign badges on user basis.
+23. Goto http://example.com/badge-manager/earners to assign/unassign badges on badge basis.
+
+       
+       
+    
+    
